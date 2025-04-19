@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Combo Trainer</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .controls label {
+      font-size: 0.9rem;
+    }
+
+    .controls input, .controls select {
+      padding: 0.2rem;
+      font-size: 1rem;
+    }
+
+    .lists {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-x: auto;
+    }
+
+    .list-container {
+      background: #fff;
+      border-radius: 8px;
+      padding: 0.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+
+    .list-container h2 {
+      font-size: 1.1rem;
+      margin: 0 0 0.5rem;
+      text-align: center;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    li {
+      padding: 0.5rem 0.75rem;
+      background: #eee;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      flex: 0 1 auto;
+      text-align: center;
+    }
+
+.round-settings {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+.round-settings label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-weight: bold;
+}
+
+.round-settings input {
+  margin-top: 5px;
+  padding: 6px;
+  width: 100px;
+  font-size: 14px;
+}
+
+
+    li.highlight {
+      background-color: #ffd54f;
+      font-weight: bold;
+    }
+
+    .list-container.round-selected {
+      outline: 3px solid #007AFF;
+      box-shadow: 0 0 10px rgba(0, 122, 255, 0.4);
+    }
+
+    .rounds .list-container {
+      background: #E8F5E9;
+    }
+
+    .rounds .list-container h2 {
+      background-color: #81C784;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 8px;
+    }
+
+    .rounds {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .round-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    #stopButton {
+      margin-top: 0.5rem;
+      background-color: #d32f2f;
+    }
+
+    #stopButton:hover {
+      background-color: #b71c1c;
+    }
+
+    button {
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #007AFF;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #005FCC;
+    }
+
+    #comboDisplay {
+      font-size: 1.5rem;
+      text-align: center;
+      margin: 1rem auto 0.5rem;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      border-radius: 10px;
+      max-width: 90%;
+    }
+
+    #timerDisplay {
+      font-size: 2rem;
+      text-align: center;
+      font-weight: bold;
+      margin-top: 1rem;
+      color: #007AFF;
+    }
+
+    @media (min-width: 768px) {
+      .lists {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .list-container {
+        width: 300px;
+      }
+
+      .rounds {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .list-container ul {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Combo Trainer</h1>
+
+  <div class="controls">
+    <label>
+      Interval Mode:
+      <select id="intervalMode" onchange="toggleIntervalInputs()">
+        <option value="random">Random</option>
+        <option value="slow">Slow</option>
+        <option value="medium" selected>Medium</option>
+        <option value="fast">Fast</option>
+      </select>
+    </label>
+    <label id="minLabel">Min Interval (s):
+      <input type="number" id="minInterval" value="2" min="1" max="20">
+    </label>
+    <label id="maxLabel">Max Interval (s):
+      <input type="number" id="maxInterval" value="4" min="1" max="20">
+    </label>
+  </div>
+
+ <div class="combo-toggle-container">
+  <button id="toggleCombosBtn" onclick="toggleComboList()">Hide Combo List ▲</button>
+  <div class="lists" id="masterLists"></div>
+</div>
+
+
+  <div class="rounds">
+    <div class="list-container">
+      <h2>Round 1</h2>
+      <ul id="round1"></ul>
+    </div>
+    <div class="list-container">
+      <h2>Round 2</h2>
+      <ul id="round2"></ul>
+    </div>
+    <div class="list-container">
+      <h2>Round 3</h2>
+      <ul id="round3"></ul>
+    </div>
+  </div>
+<div class="preset-section">
+  <h2>Save & Load Presets</h2>
+  <div class="preset-controls">
+    <div class="input-group">
+  <button class="save-btn" onclick="saveSetup()">Save</button>
+</div>
+
+    <div class="input-group">
+      <select id="savedSetups">
+        <option value="">-- Select a setup --</option>
+      </select>
+      <div class="button-group">
+        <button class="load-btn" onclick="loadSetup()">Load</button>
+        <button class="edit-btn" onclick="editSetup()">Rename</button>
+        <button class="delete-btn" onclick="deleteSetup()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<style>
+.preset-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 30px;
+  text-align: center;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.preset-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #007AFF;
+}
+
+.preset-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-group input,
+.input-group select {
+  width: 100%;
+  max-width: 300px;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.save-btn,
+.load-btn,
+.edit-btn,
+.delete-btn {
+  padding: 10px 16px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 80px;
+}
+
+.save-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.load-btn {
+  background-color: #007AFF;
+  color: white;
+}
+
+.edit-btn {
+  background-color: #FFA726;
+  color: white;
+}
+
+.delete-btn {
+  background-color: #E53935;
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #45a049;
+}
+
+.load-btn:hover {
+  background-color: #005FCC;
+}
+
+.edit-btn:hover {
+  background-color: #FB8C00;
+}
+
+.delete-btn:hover {
+  background-color: #C62828;
+}
+
+@media (max-width: 500px) {
+  .button-group {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .save-btn,
+  .load-btn,
+  .edit-btn,
+  .delete-btn {
+    width: 100%;
+  }
+}
+
+
+</style>
+<style>
+  .combo-toggle-container {
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  #toggleCombosBtn {
+    background-color: #ccc;
+    color: #333;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+  }
+
+  #toggleCombosBtn:hover {
+    background-color: #bbb;
+  }
+
+  .lists.collapsed {
+    display: none;
+  }
+</style>
+
+
+<div class="round-settings">
+  <label>
+    Round Time (seconds):
+    <input type="number" id="roundTimeInput" value="60" min="10" step="10">
+  </label>
+  <label>
+    Rest Time (seconds):
+    <input type="number" id="restTimeInput" value="10" min="5" step="5">
+  </label>
+</div>
+<div class="round-buttons">
+  <button onclick="startAllRounds()">Punch-Out!!</button>
+</div>
+  <div class="round-buttons">
+    <button id="stopButton" onclick="stopCombo()">Stop</button>
+  </div>
+
+  <div id="timerDisplay">1:00</div>
+  <div id="comboDisplay">Ready</div>
+
+  <script>
+    let intervalId = null;
+    let timerInterval = null;
+    let selectedVoice = null;
+    let activeRoundId = null;
+    const roundDuration = 60;
+
+    const defaultCombos = [
+"1", "2", "3", "4",
+ 
+"1-2", "2-3", "1-1", "1-4", "1-4B", "1B-4", "1-2B", "2-2", "2-2B", "2-2B", "2-3B", "2B-3", "3-4",
+
+ "1-2-3", "1-1-2", "1-2-1", "2-3-2", "1-2B-3", "2-3B-2", "2-3B-3",  "2-1-2B", "1-2-3B",
+
+"1-2-3B-2", "1-2-1-2", "1-1-2B-3", "1-2-1-4", "2-3B-2-3",
+
+ "1-2B-3-S-2-3B"
+    ];
+
+    const speakMap = {
+      "S": "SLIP", "P": "PARRY", "D": "DUCK", "SB": "STEP BACK"
+    };
+
+    function setActiveRound(roundId) {
+      if (activeRoundId === roundId) {
+        activeRoundId = null;
+        document.querySelectorAll(".rounds .list-container").forEach(container => {
+          container.classList.remove("round-selected");
+        });
+        highlightMasterCombos();
+      } else {
+        activeRoundId = roundId;
+        document.querySelectorAll(".rounds .list-container").forEach(container => {
+          container.classList.toggle("round-selected", container.querySelector("ul").id === roundId);
+        });
+        highlightMasterCombos();
+      }
+    }
+
+    function highlightMasterCombos() {
+      const activeCombos = Array.from(document.getElementById(activeRoundId)?.children || []).map(li => li.textContent);
+      document.querySelectorAll("#masterLists li").forEach(li => {
+        if (activeCombos.includes(li.textContent)) {
+          li.classList.add("highlight");
+        } else {
+          li.classList.remove("highlight");
+        }
+      });
+    }
+
+    function groupCombosByPunchCount(combos) {
+      const groups = {
+        "1 Punch": [],
+        "2 Punch": [],
+        "3 Punch": [],
+        "4 Punch": [],
+        "5+ Punch": []
+      };
+
+      combos.forEach(combo => {
+        const count = combo.split('-').length;
+        if (count === 1) groups["1 Punch"].push(combo);
+        else if (count === 2) groups["2 Punch"].push(combo);
+        else if (count === 3) groups["3 Punch"].push(combo);
+        else if (count === 4) groups["4 Punch"].push(combo);
+        else groups["5+ Punch"].push(combo);
+      });
+
+      return groups;
+    }
+
+    function renderMasterLists() {
+      const grouped = groupCombosByPunchCount(defaultCombos);
+      const container = document.getElementById("masterLists");
+      container.innerHTML = '';
+
+      for (const section in grouped) {
+        const div = document.createElement("div");
+        div.className = "list-container";
+        div.innerHTML = `<h2>${section}</h2>`;
+        const ul = document.createElement("ul");
+
+        grouped[section].forEach(combo => {
+          const li = document.createElement("li");
+          li.textContent = combo;
+          li.addEventListener("click", () => showRoundChoice(combo));
+          ul.appendChild(li);
+        });
+
+        div.appendChild(ul);
+        container.appendChild(div);
+      }
+    }
+
+    function showRoundChoice(combo) {
+      const div = document.createElement("div");
+      div.style.position = "fixed";
+      div.style.top = "50%";
+      div.style.left = "50%";
+      div.style.transform = "translate(-50%, -50%)";
+      div.style.background = "#fff";
+      div.style.padding = "1rem";
+      div.style.border = "2px solid #ccc";
+      div.style.borderRadius = "10px";
+      div.style.zIndex = "9999";
+      div.style.textAlign = "center";
+      div.innerHTML = `
+        <p>Add "${combo}" to:</p>
+        <button onclick="addToRound('${combo}', 'round1'); this.parentElement.remove()">Round 1</button>
+        <button onclick="addToRound('${combo}', 'round2'); this.parentElement.remove()">Round 2</button>
+        <button onclick="addToRound('${combo}', 'round3'); this.parentElement.remove()">Round 3</button>
+        <br><br>
+        <button onclick="this.parentElement.remove()">Cancel</button>
+      `;
+      document.body.appendChild(div);
+    }
+
+    function addToRound(combo, roundId) {
+      const ul = document.getElementById(roundId);
+      const li = document.createElement("li");
+      li.textContent = combo;
+      li.addEventListener("click", () => li.remove());
+      ul.appendChild(li);
+      highlightMasterCombos();
+    }
+
+    function speakCombo(combo, callback) {
+      const display = document.getElementById("comboDisplay");
+      display.textContent = combo;
+
+      const modCombo = combo.replace(/(\d)-?B/g, "$1-BODY");
+      const parts = modCombo.split("-").map(part => speakMap[part] || part);
+
+      const utterance = new SpeechSynthesisUtterance(parts.join(" "));
+      utterance.rate = 1;
+      if (selectedVoice) utterance.voice = selectedVoice;
+      utterance.onend = callback;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
+
+function startAllRounds() {
+  stopCombo();
+  const roundIds = ['round1', 'round2', 'round3'];
+  let currentRound = 0;
+
+  function runNext() {
+    if (currentRound >= roundIds.length) {
+      document.getElementById("comboDisplay").textContent = "All rounds complete!";
+      return;
+    }
+
+    const roundId = roundIds[currentRound];
+    const combos = Array.from(document.getElementById(roundId).children).map(li => li.textContent);
+
+    if (combos.length === 0) {
+      currentRound++;
+      runNext(); // skip empty round
+      return;
+    }
+
+    const roundDuration = parseInt(document.getElementById("roundTimeInput").value, 10);
+let timeLeft = roundDuration;
+
+    document.getElementById("timerDisplay").textContent = formatTime(timeLeft);
+    document.getElementById("comboDisplay").textContent = `Round ${currentRound + 1}`;
+    setActiveRound(roundId);
+
+    const mode = document.getElementById("intervalMode").value;
+    const min = parseFloat(document.getElementById("minInterval").value) * 1000;
+    const max = parseFloat(document.getElementById("maxInterval").value) * 1000;
+
+    function getInterval() {
+      switch (mode) {
+        case "slow": return 4000;
+        case "medium": return 2500;
+        case "fast": return 1500;
+        case "random": return Math.random() * (max - min) + min;
+        default: return 2500;
+      }
+    }
+
+    function nextCall() {
+      if (timeLeft <= 0) return;
+      const combo = combos[Math.floor(Math.random() * combos.length)];
+      speakCombo(combo, () => {
+        const delay = getInterval();
+        intervalId = setTimeout(nextCall, delay);
+      });
+    }
+
+    nextCall();
+
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      document.getElementById("timerDisplay").textContent = formatTime(timeLeft);
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        clearTimeout(intervalId);
+        speechSynthesis.cancel();
+        currentRound++;
+        startRest();
+      }
+    }, 1000);
+  }
+
+  function startRest() {
+    let restTime = parseInt(document.getElementById("restTimeInput").value, 10);
+
+    document.getElementById("comboDisplay").textContent = "Rest";
+    document.getElementById("timerDisplay").textContent = formatTime(restTime);
+    timerInterval = setInterval(() => {
+      restTime--;
+      document.getElementById("timerDisplay").textContent = formatTime(restTime);
+      if (restTime <= 0) {
+        clearInterval(timerInterval);
+        runNext();
+      }
+    }, 1000);
+  }
+
+  runNext();
+}
+
+
+    function stopCombo() {
+      clearTimeout(intervalId);
+      clearInterval(timerInterval);
+      speechSynthesis.cancel();
+      document.getElementById("comboDisplay").textContent = "Paused";
+    }
+
+    function toggleIntervalInputs() {
+      const isRandom = document.getElementById("intervalMode").value === "random";
+      document.getElementById("minLabel").style.display = isRandom ? "inline-block" : "none";
+      document.getElementById("maxLabel").style.display = isRandom ? "inline-block" : "none";
+    }
+
+    function setMaleVoice() {
+      const voices = speechSynthesis.getVoices();
+      selectedVoice = voices.find(v => /daniel|evan|alex|aaron/i.test(v.name)) || voices.find(v => /en/i.test(v.lang));
+    }
+
+    window.speechSynthesis.onvoiceschanged = setMaleVoice;
+    window.onload = () => {
+      renderMasterLists();
+      setMaleVoice();
+      toggleIntervalInputs();
+      document.querySelectorAll(".rounds .list-container").forEach(container => {
+        container.addEventListener("click", () => {
+          const ul = container.querySelector("ul");
+          if (ul) setActiveRound(ul.id);
+        });
+      });
+    };
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60).toString();
+      const s = (seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+	
+	
+
+function saveSetup() {
+  const name = prompt("Enter a name for this setup:");
+  if (!name) return alert("Save cancelled. No name entered.");
+
+  const rounds = ["round1", "round2", "round3"].reduce((acc, id) => {
+    acc[id] = Array.from(document.getElementById(id).children).map(li => li.textContent);
+    return acc;
+  }, {});
+
+  const setup = {
+    rounds,
+    intervalMode: document.getElementById("intervalMode").value,
+    minInterval: document.getElementById("minInterval").value,
+    maxInterval: document.getElementById("maxInterval").value,
+    roundTime: document.getElementById("roundTimeInput").value,
+    restTime: document.getElementById("restTimeInput").value
+  };
+
+  localStorage.setItem(`comboSetup:${name}`, JSON.stringify(setup));
+  updateSavedSetups();
+  alert(`Saved setup: ${name}`);
+}
+
+function deleteSetup() {
+  const name = document.getElementById("savedSetups").value;
+  if (!name) return alert("Please select a setup to delete.");
+  const confirmDelete = confirm(`Are you sure you want to delete "${name}"?`);
+  if (confirmDelete) {
+    localStorage.removeItem(`comboSetup:${name}`);
+    updateSavedSetups();
+    alert(`Deleted setup: ${name}`);
+  }
+}
+
+function editSetup() {
+  const oldName = document.getElementById("savedSetups").value;
+  if (!oldName) return alert("Please select a setup to rename.");
+  const newName = prompt("Enter a new name for this setup:", oldName);
+  if (!newName || newName === oldName) return;
+
+  const existingData = localStorage.getItem(`comboSetup:${oldName}`);
+  if (!existingData) return alert("Original setup not found.");
+
+  localStorage.setItem(`comboSetup:${newName}`, existingData);
+  localStorage.removeItem(`comboSetup:${oldName}`);
+  updateSavedSetups();
+  alert(`Renamed "${oldName}" to "${newName}"`);
+}
+
+function loadSetup() {
+  const name = document.getElementById("savedSetups").value;
+  if (!name) return;
+
+  const data = localStorage.getItem(`comboSetup:${name}`);
+  if (!data) return alert("No saved data found.");
+
+  const setup = JSON.parse(data);
+
+  // Load round combos
+  ["round1", "round2", "round3"].forEach(id => {
+    const ul = document.getElementById(id);
+    ul.innerHTML = '';
+    (setup.rounds[id] || []).forEach(combo => {
+      const li = document.createElement("li");
+      li.textContent = combo;
+      li.addEventListener("click", () => li.remove());
+      ul.appendChild(li);
+    });
+  });
+
+  document.getElementById("intervalMode").value = setup.intervalMode || "medium";
+  document.getElementById("minInterval").value = setup.minInterval || 2;
+  document.getElementById("maxInterval").value = setup.maxInterval || 4;
+  document.getElementById("roundTimeInput").value = setup.roundTime || 60;
+  document.getElementById("restTimeInput").value = setup.restTime || 10;
+
+  highlightMasterCombos();
+}
+
+function updateSavedSetups() {
+  const select = document.getElementById("savedSetups");
+  select.innerHTML = `<option value="">-- Select a setup --</option>`;
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith("comboSetup:")) {
+      const name = key.replace("comboSetup:", "");
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    }
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  renderMasterLists();
+  updateSavedSetups();
+});
+  // Initialize dropdown on page load
+window.addEventListener("load", () => {
+  updateSavedSetups();
+});
+
+function toggleComboList() {
+  const comboList = document.getElementById("masterLists");
+  const button = document.getElementById("toggleCombosBtn");
+
+  comboList.classList.toggle("collapsed");
+
+  if (comboList.classList.contains("collapsed")) {
+    button.textContent = "Show Combo List ▼";
+  } else {
+    button.textContent = "Hide Combo List ▲";
+  }
+}
+
+  </script>
+  
+</body>
+</html>
