@@ -766,10 +766,17 @@ function startAllRounds() {
   if (selectedVoice) announceRound.voice = selectedVoice;
   speechSynthesis.speak(announceRound);
 
-  const isFreestyle = combos.length === 0;
-  document.getElementById("comboDisplay").textContent = isFreestyle ? "Freestyle Round!!" : `Round ${roundNumber}`;
+  const isFreestyle = combos.length === 0 || combos.every(c => c.trim().toLowerCase() === "freestyle round");
 
-  if (!isFreestyle) {
+  if (isFreestyle) {
+    document.getElementById("comboDisplay").textContent = "Freestyle Round!!";
+
+    const freestyleUtterance = new SpeechSynthesisUtterance("Freestyle Round");
+    if (selectedVoice) freestyleUtterance.voice = selectedVoice;
+    speechSynthesis.speak(freestyleUtterance);
+  } else {
+    document.getElementById("comboDisplay").textContent = `Round ${roundNumber}`;
+
     const mode = document.getElementById("intervalMode").value;
     const min = parseFloat(document.getElementById("minInterval").value) * 1000;
     const max = parseFloat(document.getElementById("maxInterval").value) * 1000;
@@ -795,7 +802,7 @@ function startAllRounds() {
 
     initialTimeoutId = setTimeout(() => {
       nextCall();
-    }, 3000); // delay first combo
+    }, 3000);
   }
 
   timerInterval = setInterval(() => {
@@ -828,6 +835,7 @@ function startAllRounds() {
     }
   }, 1000);
 }
+
 
 function playTickSound() {
   const context = getAudioContext();
@@ -1010,22 +1018,25 @@ function loadSetup() {
   Object.keys(setup.rounds || {}).forEach(id => {
     const ul = document.getElementById(id);
     if (!ul) return;
-    ul.innerHTML = '';
-	checkFreestylePlaceholder(ul);
+   ul.innerHTML = '';
 
-    (setup.rounds[id] || []).forEach(combo => {
-      const li = document.createElement("li");
-      li.textContent = combo;
-      li.addEventListener("click", () => {
-  li.remove();
-  checkFreestylePlaceholder(ul);
+(setup.rounds[id] || []).forEach(combo => {
+  const li = document.createElement("li");
+  li.textContent = combo;
+  li.addEventListener("click", () => {
+    li.remove();
+    checkFreestylePlaceholder(ul);
+  });
+  ul.appendChild(li);
 });
 
-      ul.appendChild(li);
-    });
+checkFreestylePlaceholder(ul); // ✅ Only check after loading combos
+
   });
 
   document.getElementById("intervalMode").value = setup.intervalMode || "medium";
+  toggleIntervalInputs(); // 🔧 Fix visibility of min/max for random mode
+
   document.getElementById("minInterval").value = setup.minInterval || 2;
   document.getElementById("maxInterval").value = setup.maxInterval || 4;
   document.getElementById("roundTimeInput").value = setup.roundTime || 60;
