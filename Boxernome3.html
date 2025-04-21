@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Boxing Timer + Metronome</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .container {
+      display: flex;
+      align-items: flex-start;
+      border: 4px solid crimson;
+      border-radius: 12px;
+      padding: 1rem;
+      background-color: #222;
+      max-width: 900px;
+    }
+
+    #gnome {
+      height: 100%;
+      max-height: 500px;
+      object-fit: contain;
+      margin-right: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+    }
+
+    .content {
+      flex: 1;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 0.5rem 0;
+    }
+
+    input, select, button {
+      font-size: 1rem;
+      margin: 0.25rem 0;
+    }
+
+    #startWorkoutBtn, #stopBtn {
+      background-color: crimson;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 1.1rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+      margin-right: 0.5rem;
+    }
+
+    #timerDisplay {
+      font-size: 3rem;
+      margin-top: 1rem;
+    }
+	/* Glove flash effect */
+.gnome-glow {
+  filter: drop-shadow(0 0 15px red) brightness(1.5);
+  transition: filter 0.1s ease;
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="boxernome.png" alt="Boxernome" id="gnome" />
+
+    <div class="content">
+      <h1>Boxing Timer + Metronome</h1>
+
+      <div id="timerSettings">
+        <label>Rounds: <input type="number" id="roundsInput" value="3" min="1"></label>
+        <label>Round Time (sec): <input type="number" id="roundTimeInput" value="180" min="10"></label>
+        <label>Rest Time (sec): <input type="number" id="restTimeInput" value="60" min="10"></label>
+
+        <label>Time Signature:
+          <select id="timeSig">
+            <option value="4">4/4</option>
+            <option value="3">3/4 (Waltz)</option>
+          </select>
+        </label>
+
+        <label>Tempo: <span id="tempoVal">120</span> BPM</label>
+        <input type="range" id="tempo" min="40" max="240" value="120" />
+
+        <label>Tick Sound:
+          <select id="sound">
+            <option value="beep">Beep</option>
+            <option value="click">Click</option>
+            <option value="wood">Woodblock</option>
+            <option value="sticks-high">Sticks High</option>
+            <option value="sticks-low">Sticks Low</option>
+            <option value="clap">Clap</option>
+            <option value="clap-soft">Clap (Soft)</option>
+          </select>
+        </label>
+
+        <button id="startWorkoutBtn">Start Workout</button>
+        <button id="stopBtn">Stop</button>
+      </div>
+
+      <div id="status">Idle</div>
+      <div id="timerDisplay">00:00</div>
+    </div>
+  </div>
+
+  <script>
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const tempoSlider = document.getElementById('tempo');
+    const tempoVal = document.getElementById('tempoVal');
+    const timeSig = document.getElementById('timeSig');
+    const soundPicker = document.getElementById('sound');
+    const statusDisplay = document.getElementById("status");
+    const timerDisplay = document.getElementById("timerDisplay");
+	const gnome = document.getElementById("gnome");
+
+
+    let currentRound = 0, totalRounds = 0;
+    let roundTime = 0, restTime = 0;
+    let isRest = false, timerInterval = null, metronomeInterval = null;
+    let currentBeat = 0;
+
+    tempoSlider.addEventListener('input', () => {
+      tempoVal.textContent = tempoSlider.value;
+    });
+
+    function playSound(isAccent) {
+      const type = soundPicker.value;
+
+      if (type === 'clap' || type === 'clap-soft') {
+        const bufferSize = 4096;
+        const noiseBuffer = context.createBuffer(1, bufferSize, context.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * (type === 'clap' ? 1 : 0.5);
+        }
+
+        const noise = context.createBufferSource();
+        noise.buffer = noiseBuffer;
+
+        const filter = context.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = isAccent ? 1800 : 1500;
+        filter.Q.value = isAccent ? 1.5 : 1;
+
+        const gain = context.createGain();
+        gain.gain.setValueAtTime(isAccent ? 1.2 : 0.6, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + (isAccent ? 0.12 : 0.08));
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(context.destination);
+        noise.start();
+        noise.stop(context.currentTime + (isAccent ? 0.12 : 0.08));
+
+        if (isAccent) {
+          const osc = context.createOscillator();
+          const beepGain = context.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 500;
+          beepGain.gain.setValueAtTime(0.4, context.currentTime);
+          beepGain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.1);
+          osc.connect(beepGain);
+          beepGain.connect(context.destination);
+          osc.start();
+          osc.stop(context.currentTime + 0.1);
+        }
+        return;
+      }
+
+      const osc = context.createOscillator();
+      const gain = context.createGain();
+      let frequency = isAccent ? 880 : 440;
+      let shape = 'square';
+
+      switch (type) {
+        case 'click': frequency = isAccent ? 1600 : 800; break;
+        case 'wood': frequency = isAccent ? 700 : 400; break;
+        case 'sticks-high': frequency = isAccent ? 1200 : 900; shape = 'triangle'; break;
+        case 'sticks-low': frequency = isAccent ? 750 : 550; shape = 'triangle'; break;
+      }
+
+      osc.type = shape;
+      osc.frequency.value = frequency;
+      gain.gain.setValueAtTime(1, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.05);
+
+      osc.connect(gain);
+      gain.connect(context.destination);
+      osc.start();
+      osc.stop(context.currentTime + 0.05);
+    }
+
+    function startMetronome() {
+      const bpm = parseInt(tempoSlider.value);
+      const beatInterval = (60 / bpm) * 1000;
+      const beatsPerMeasure = parseInt(timeSig.value);
+      currentBeat = 0;
+
+      metronomeInterval = setInterval(() => {
+  const isAccent = currentBeat === 0;
+  playSound(isAccent);
+
+  // 🔥 Glove glow animation
+  gnome.classList.add('gnome-glow');
+  setTimeout(() => gnome.classList.remove('gnome-glow'), 80);
+
+  currentBeat = (currentBeat + 1) % beatsPerMeasure;
+}, beatInterval);
+
+    }
+
+    function stopMetronome() {
+      clearInterval(metronomeInterval);
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function startWorkout() {
+      totalRounds = parseInt(document.getElementById("roundsInput").value);
+      roundTime = parseInt(document.getElementById("roundTimeInput").value);
+      restTime = parseInt(document.getElementById("restTimeInput").value);
+      currentRound = 1;
+      startRound();
+    }
+
+    function startRound() {
+      isRest = false;
+      let timeLeft = roundTime;
+      statusDisplay.textContent = `Round ${currentRound}`;
+      timerDisplay.textContent = formatTime(timeLeft);
+      startMetronome();
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = formatTime(timeLeft);
+        if (timeLeft <= 0) {
+          stopMetronome();
+          clearInterval(timerInterval);
+          if (currentRound < totalRounds) {
+            startRest();
+          } else {
+            statusDisplay.textContent = "Workout Complete!";
+          }
+        }
+      }, 1000);
+    }
+
+    function startRest() {
+      isRest = true;
+      let timeLeft = restTime;
+      statusDisplay.textContent = `Rest`;
+      timerDisplay.textContent = formatTime(timeLeft);
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = formatTime(timeLeft);
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          currentRound++;
+          startRound();
+        }
+      }, 1000);
+    }
+
+    document.getElementById("startWorkoutBtn").addEventListener("click", () => {
+      context.resume();
+      startWorkout();
+    });
+
+    document.getElementById("stopBtn").addEventListener("click", () => {
+      stopMetronome();
+      clearInterval(timerInterval);
+      statusDisplay.textContent = "Stopped";
+      timerDisplay.textContent = "00:00";
+      currentRound = 0;
+    });
+  </script>
+</body>
+</html>
