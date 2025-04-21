@@ -812,6 +812,7 @@ function startAllRounds(isTwoPlayerMode = false) {
   function runNext() {
     if (currentRound >= roundIds.length) {
       document.getElementById("comboDisplay").textContent = "All rounds complete!";
+	  
       return;
     }
 
@@ -827,6 +828,7 @@ if (isOverlayVisible) {
 
     setActiveRound(roundId);
     document.getElementById("timerDisplay").textContent = formatTime(timeLeft);
+document.getElementById("fullscreenTimer").style.color = "yellow";
 
     const announceRound = new SpeechSynthesisUtterance(`Round ${roundNumber}`);
     if (selectedVoice) announceRound.voice = selectedVoice;
@@ -916,6 +918,10 @@ function startRest() {
   let restTime = parseInt(document.getElementById("restTimeInput").value, 10);
   document.getElementById("comboDisplay").textContent = "Rest";
   document.getElementById("timerDisplay").textContent = formatTime(restTime);
+  document.getElementById("fullscreenTimer").style.color = "lime";
+document.getElementById("timerDisplay").style.color = "lime";
+
+
 
   const restAnnounce = new SpeechSynthesisUtterance(`Rest for ${restTime} seconds`);
   if (selectedVoice) restAnnounce.voice = selectedVoice;
