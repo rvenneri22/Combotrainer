@@ -27,28 +27,36 @@
 }
 
 .speed-btn {
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
   font-size: 1rem;
   cursor: pointer;
   opacity: 0.3;
   color: #666;
-  transition: opacity 0.2s, color 0.2s;
-  outline: none;
-  -webkit-tap-highlight-color: transparent; /* iOS: remove blue highlight */
+  outline: none !important;
+  transition: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.speed-btn:focus {
-  outline: none; /* prevent focus ring */
+/* Remove ALL hover and focus styles */
+.speed-btn:hover,
+.speed-btn:focus,
+.speed-btn:active {
+  background: transparent !important;
+  color: #666 !important;
+  opacity: 0.3 !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-
-
+/* Only style when .active */
 .speed-btn.active {
-  opacity: 1;
-  color: #007AFF;
-  font-weight: bold;
+  opacity: 1 !important;
+  color: #007AFF !important;
+  font-weight: bold !important;
 }
+
+
 
 
 
