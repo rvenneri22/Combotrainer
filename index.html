@@ -32,8 +32,17 @@
   font-size: 1rem;
   cursor: pointer;
   opacity: 0.3;
+  color: #666;
   transition: opacity 0.2s, color 0.2s;
+  outline: none;
+  -webkit-tap-highlight-color: transparent; /* iOS: remove blue highlight */
 }
+
+.speed-btn:focus {
+  outline: none; /* prevent focus ring */
+}
+
+
 
 .speed-btn.active {
   opacity: 1;
